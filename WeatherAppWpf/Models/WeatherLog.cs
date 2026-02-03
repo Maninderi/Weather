@@ -1,6 +1,6 @@
 using System;
 
-namespace WeatherApp.Models
+namespace WeatherAppWpf.Models
 {
     public class WeatherLog
     {
