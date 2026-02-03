@@ -2,16 +2,17 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using WeatherAppWpf.Models;
 
-namespace WeatherApp.Services
+namespace WeatherAppWpf.Services
 {
     public class WeatherService
     {
         private readonly HttpClient _httpClient;
 
-        public WeatherService(HttpClient httpClient)
+        public WeatherService()
         {
-            _httpClient = httpClient;
+            _httpClient = new HttpClient();
         }
 
         public async Task<CurrentWeather?> GetWeatherAsync(double lat, double lon)
@@ -23,9 +24,9 @@ namespace WeatherApp.Services
                 var response = await _httpClient.GetFromJsonAsync<OpenMeteoResponse>(url);
                 return response?.Current;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error fetching weather: {ex.Message}");
+                // In a real app, log error
                 return null;
             }
         }

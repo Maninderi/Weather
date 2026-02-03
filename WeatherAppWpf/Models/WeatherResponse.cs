@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace WeatherApp.Services
+namespace WeatherAppWpf.Models
 {
     public class OpenMeteoResponse
     {
