@@ -37,6 +37,9 @@ namespace WeatherAppWpf.ViewModels
         [ObservableProperty]
         private bool isLoading;
 
+        [ObservableProperty]
+        private string errorMessage = string.Empty;
+
         public ObservableCollection<WeatherLog> Logs { get; } = new();
 
         public MainViewModel()
@@ -53,6 +56,7 @@ namespace WeatherAppWpf.ViewModels
         {
             if (IsLoading) return;
             IsLoading = true;
+            ErrorMessage = string.Empty;
 
             try
             {
@@ -106,6 +110,10 @@ namespace WeatherAppWpf.ViewModels
                 {
                     Logs.Add(log);
                 }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error: {ex.Message}";
             }
             finally
             {

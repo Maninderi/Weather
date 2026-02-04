@@ -10,7 +10,7 @@ namespace WeatherAppWpf.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Data Source=weather.db");
+            optionsBuilder.UseSqlite($"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "weather.db")}");
         }
     }
 }
