@@ -13,22 +13,15 @@ namespace WeatherAppWpf.Services
         public WeatherService()
         {
             _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "WeatherAppWpf/1.0");
         }
 
         public async Task<CurrentWeather?> GetWeatherAsync(double lat, double lon)
         {
             var url = $"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_direction_10m";
 
-            try
-            {
-                var response = await _httpClient.GetFromJsonAsync<OpenMeteoResponse>(url);
-                return response?.Current;
-            }
-            catch (Exception)
-            {
-                // In a real app, log error
-                return null;
-            }
+            var response = await _httpClient.GetFromJsonAsync<OpenMeteoResponse>(url);
+            return response?.Current;
         }
     }
 }
