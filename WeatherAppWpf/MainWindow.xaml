@@ -181,17 +181,82 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Current Location" Style="{StaticResource MonoText}" Foreground="{StaticResource TextDim}" FontSize="13"/>
-                        <TextBlock Text="{Binding CityName}" FontSize="40" FontWeight="ExtraBold" Margin="0,8,0,0"/>
+                        <TextBlock Text="Текущее местоположение" Style="{StaticResource MonoText}" Foreground="{StaticResource TextDim}" FontSize="13"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding CityName}" FontSize="40" FontWeight="ExtraBold" Margin="0,8,16,0"/>
+                            <Button Command="{Binding AddFavoriteCommand}"
+                                    Content="★"
+                                    ToolTip="Добавить в избранное"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="24"
+                                    Foreground="{StaticResource AccentBlue}"
+                                    VerticalAlignment="Center"
+                                    Margin="0,8,0,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" FontSize="{TemplateBinding FontSize}"/>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
                         <TextBlock Text="{Binding ErrorMessage}" Foreground="#ef4444" FontSize="14" Margin="0,4,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
 
+                    <!-- Search Box -->
                     <Border Grid.Column="1" Background="{StaticResource TileBg}" BorderBrush="{StaticResource TileBorder}" BorderThickness="1" CornerRadius="12" Padding="12,8" Width="300" VerticalAlignment="Bottom">
-                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="{StaticResource TextDim}" FontSize="14" VerticalContentAlignment="Center">
-                            <TextBox.InputBindings>
-                                <KeyBinding Key="Enter" Command="{Binding SearchCityCommand}"/>
-                            </TextBox.InputBindings>
-                        </TextBox>
+                        <Grid>
+                             <!-- Placeholder -->
+                             <TextBlock Text="Поиск города..." VerticalAlignment="Center" Margin="4,0,0,0" Foreground="{StaticResource TextDim}" IsHitTestVisible="False">
+                                 <TextBlock.Style>
+                                     <Style TargetType="TextBlock">
+                                         <Setter Property="Visibility" Value="Collapsed"/>
+                                         <Style.Triggers>
+                                             <DataTrigger Binding="{Binding SearchText}" Value="">
+                                                 <Setter Property="Visibility" Value="Visible"/>
+                                             </DataTrigger>
+                                             <DataTrigger Binding="{Binding SearchText}" Value="{x:Null}">
+                                                 <Setter Property="Visibility" Value="Visible"/>
+                                             </DataTrigger>
+                                         </Style.Triggers>
+                                     </Style>
+                                 </TextBlock.Style>
+                             </TextBlock>
+
+                             <ComboBox IsEditable="True"
+                                       Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                       ItemsSource="{Binding Suggestions}"
+                                       SelectedItem="{Binding SelectedSuggestion}"
+                                       StaysOpenOnEdit="True"
+                                       IsTextSearchEnabled="False"
+                                       Background="Transparent"
+                                       BorderThickness="0"
+                                       Foreground="{StaticResource TextDim}"
+                                       FontSize="14"
+                                       VerticalContentAlignment="Center"
+                                       Padding="0">
+                                <ComboBox.Resources>
+                                    <Style TargetType="{x:Type TextBox}">
+                                         <Setter Property="Background" Value="Transparent"/>
+                                         <Setter Property="BorderThickness" Value="0"/>
+                                         <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
+                                         <Setter Property="CaretBrush" Value="{StaticResource TextMain}"/>
+                                    </Style>
+                                </ComboBox.Resources>
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                            <TextBlock Text=", "/>
+                                            <TextBlock Text="{Binding Country}" Foreground="{StaticResource TextDim}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                                <ComboBox.InputBindings>
+                                    <KeyBinding Key="Enter" Command="{Binding SearchCityCommand}"/>
+                                </ComboBox.InputBindings>
+                             </ComboBox>
+                        </Grid>
                     </Border>
                 </Grid>
 
@@ -376,7 +441,7 @@
                                 </Style>
                             </DataGrid.Resources>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="TIMESTAMP" Binding="{Binding Timestamp, StringFormat=HH:mm:ss}" Width="*"/>
+                                <DataGridTextColumn Header="ВРЕМЯ" Binding="{Binding Timestamp, StringFormat=HH:mm:ss}" Width="*"/>
                                 <DataGridTextColumn Header="ID" Binding="{Binding SensorId}" Width="*">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
@@ -384,9 +449,9 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="PARAMETER" Binding="{Binding Parameter}" Width="*"/>
-                                <DataGridTextColumn Header="VALUE" Binding="{Binding Value}" Width="*"/>
-                                <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="*">
+                                <DataGridTextColumn Header="ПАРАМЕТР" Binding="{Binding Parameter}" Width="*"/>
+                                <DataGridTextColumn Header="ЗНАЧЕНИЕ" Binding="{Binding Value}" Width="*"/>
+                                <DataGridTextColumn Header="СТАТУС" Binding="{Binding Status}" Width="*">
                                      <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="#4ade80"/>
@@ -399,23 +464,86 @@
                 </StackPanel>
             </Grid>
 
-            <!-- Overview View (O) -->
+            <!-- Overview View (Favorites) -->
             <Grid Visibility="{Binding IsOverviewVisible, Converter={StaticResource BoolToVis}}">
-                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                     <TextBlock Text="FAVORITES / SAVED CITIES" Style="{StaticResource LabelText}" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,16"/>
-                     <TextBlock Text="Feature coming soon..." Foreground="{StaticResource TextDim}" HorizontalAlignment="Center"/>
-                 </StackPanel>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="ИЗБРАННЫЕ ГОРОДА" Style="{StaticResource LabelText}" FontSize="24" Margin="0,0,0,24"/>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Favorites}">
+                         <ItemsControl.ItemsPanel>
+                             <ItemsPanelTemplate>
+                                 <WrapPanel Orientation="Horizontal" />
+                             </ItemsPanelTemplate>
+                         </ItemsControl.ItemsPanel>
+                         <ItemsControl.ItemTemplate>
+                             <DataTemplate>
+                                  <Border Style="{StaticResource TileStyle}"
+                                          Width="300" Height="140" Margin="0,0,24,24" Padding="20">
+                                       <Grid>
+                                           <Grid.RowDefinitions>
+                                               <RowDefinition Height="Auto"/>
+                                               <RowDefinition Height="*"/>
+                                               <RowDefinition Height="Auto"/>
+                                           </Grid.RowDefinitions>
+
+                                           <TextBlock Text="{Binding Country}" Foreground="{StaticResource TextDim}" FontSize="12" Grid.Row="0"/>
+
+                                           <Button Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                   Command="{Binding DataContext.DeleteFavoriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   CommandParameter="{Binding}"
+                                                   Content="✕"
+                                                   Background="Transparent" BorderThickness="0" Foreground="#ef4444" FontSize="14"
+                                                   Cursor="Hand">
+                                               <Button.Template>
+                                                   <ControlTemplate TargetType="Button">
+                                                       <Border Background="Transparent">
+                                                            <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                       </Border>
+                                                   </ControlTemplate>
+                                               </Button.Template>
+                                           </Button>
+
+                                           <TextBlock Text="{Binding Name}" FontSize="24" FontWeight="Bold" Grid.Row="1" VerticalAlignment="Center" TextWrapping="Wrap"/>
+
+                                           <Button Grid.Row="2" Content="Загрузить погоду"
+                                                   Command="{Binding DataContext.SelectFavoriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   CommandParameter="{Binding}"
+                                                   HorizontalAlignment="Left"
+                                                   Background="{StaticResource AccentBlue}" Foreground="White" Padding="12,6" BorderThickness="0">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                           </Button>
+                                       </Grid>
+                                  </Border>
+                             </DataTemplate>
+                         </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </Grid>
 
             <!-- Settings View (S) -->
             <Grid Visibility="{Binding IsSettingsVisible, Converter={StaticResource BoolToVis}}">
                 <StackPanel Margin="20">
-                     <TextBlock Text="SETTINGS" Style="{StaticResource LabelText}" FontSize="24" Margin="0,0,0,24"/>
+                     <TextBlock Text="НАСТРОЙКИ" Style="{StaticResource LabelText}" FontSize="24" Margin="0,0,0,24"/>
                      <Border Style="{StaticResource TileStyle}" VerticalAlignment="Top" HorizontalAlignment="Left" Width="400">
                          <StackPanel>
-                            <TextBlock Text="Weather App v1.0" FontWeight="Bold" FontSize="18"/>
-                            <TextBlock Text="Created with WPF &amp; .NET 8" Foreground="{StaticResource TextDim}" Margin="0,8,0,0"/>
-                             <Button Content="Clear Logs" Width="120" Height="32" HorizontalAlignment="Left" Margin="0,20,0,0" Background="{StaticResource AccentBlue}" BorderThickness="0" Foreground="White">
+                            <TextBlock Text="Погода v1.0" FontWeight="Bold" FontSize="18"/>
+                            <TextBlock Text="Создано с помощью WPF &amp; .NET 8" Foreground="{StaticResource TextDim}" Margin="0,8,0,0"/>
+                             <Button Command="{Binding ClearLogsCommand}"
+                                     Content="Очистить логи"
+                                     Width="140" Height="32"
+                                     HorizontalAlignment="Left" Margin="0,20,0,0"
+                                     Background="{StaticResource AccentBlue}" BorderThickness="0" Foreground="White">
                                  <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" CornerRadius="6">

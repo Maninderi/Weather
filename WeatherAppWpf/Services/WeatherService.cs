@@ -26,10 +26,27 @@ namespace WeatherAppWpf.Services
 
         public async Task<GeocodingResult?> GetCityCoordinatesAsync(string cityName)
         {
-            var url = FormattableString.Invariant($"https://geocoding-api.open-meteo.com/v1/search?name={cityName}&count=1&language=en&format=json");
+            var url = FormattableString.Invariant($"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(cityName)}&count=1&language=ru&format=json");
 
             var response = await _httpClient.GetFromJsonAsync<GeocodingResponse>(url);
             return response?.Results?.FirstOrDefault();
+        }
+
+        public async Task<System.Collections.Generic.List<GeocodingResult>> GetCitySuggestionsAsync(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query)) return new System.Collections.Generic.List<GeocodingResult>();
+
+            var url = FormattableString.Invariant($"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(query)}&count=10&language=ru&format=json");
+
+            try
+            {
+                var response = await _httpClient.GetFromJsonAsync<GeocodingResponse>(url);
+                return response?.Results ?? new System.Collections.Generic.List<GeocodingResult>();
+            }
+            catch
+            {
+                return new System.Collections.Generic.List<GeocodingResult>();
+            }
         }
     }
 }

@@ -7,6 +7,7 @@ namespace WeatherAppWpf.Data
     public class WeatherContext : DbContext
     {
         public DbSet<WeatherLog> WeatherLogs { get; set; }
+        public DbSet<FavoriteCity> Favorites { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
