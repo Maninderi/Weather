@@ -192,10 +192,21 @@
                                     FontSize="24"
                                     Foreground="{StaticResource AccentBlue}"
                                     VerticalAlignment="Center"
-                                    Margin="0,8,0,0">
+                                    Margin="0,8,0,0"
+                                    Cursor="Hand">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
-                                        <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" FontSize="{TemplateBinding FontSize}"/>
+                                        <Border Background="{TemplateBinding Background}">
+                                            <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" FontSize="{TemplateBinding FontSize}"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Opacity" Value="0.8"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter Property="Opacity" Value="0.5"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>
@@ -206,6 +217,52 @@
                     <!-- Search Box -->
                     <Border Grid.Column="1" Background="{StaticResource TileBg}" BorderBrush="{StaticResource TileBorder}" BorderThickness="1" CornerRadius="12" Padding="12,8" Width="300" VerticalAlignment="Bottom">
                         <Grid>
+                             <ComboBox IsEditable="True"
+                                       Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                       ItemsSource="{Binding Suggestions}"
+                                       SelectedItem="{Binding SelectedSuggestion}"
+                                       StaysOpenOnEdit="True"
+                                       IsTextSearchEnabled="False"
+                                       Background="Transparent"
+                                       BorderThickness="0"
+                                       Foreground="{StaticResource TextMain}"
+                                       FontSize="14"
+                                       VerticalContentAlignment="Center"
+                                       Padding="0">
+                                <ComboBox.Resources>
+                                    <Style TargetType="{x:Type TextBox}">
+                                         <Setter Property="Background" Value="Transparent"/>
+                                         <Setter Property="BorderThickness" Value="0"/>
+                                         <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
+                                         <Setter Property="CaretBrush" Value="{StaticResource TextMain}"/>
+                                    </Style>
+                                    <Style TargetType="ComboBoxItem">
+                                        <Setter Property="Background" Value="{StaticResource TileBg}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Padding" Value="10,5"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#161a22" />
+                                </ComboBox.Resources>
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                            <TextBlock Text=", "/>
+                                            <TextBlock Text="{Binding Country}" Foreground="{StaticResource TextDim}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                                <ComboBox.InputBindings>
+                                    <KeyBinding Key="Enter" Command="{Binding SearchCityCommand}"/>
+                                </ComboBox.InputBindings>
+                             </ComboBox>
+
                              <!-- Placeholder -->
                              <TextBlock Text="Поиск города..." VerticalAlignment="Center" Margin="4,0,0,0" Foreground="{StaticResource TextDim}" IsHitTestVisible="False">
                                  <TextBlock.Style>
@@ -222,40 +279,6 @@
                                      </Style>
                                  </TextBlock.Style>
                              </TextBlock>
-
-                             <ComboBox IsEditable="True"
-                                       Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                       ItemsSource="{Binding Suggestions}"
-                                       SelectedItem="{Binding SelectedSuggestion}"
-                                       StaysOpenOnEdit="True"
-                                       IsTextSearchEnabled="False"
-                                       Background="Transparent"
-                                       BorderThickness="0"
-                                       Foreground="{StaticResource TextDim}"
-                                       FontSize="14"
-                                       VerticalContentAlignment="Center"
-                                       Padding="0">
-                                <ComboBox.Resources>
-                                    <Style TargetType="{x:Type TextBox}">
-                                         <Setter Property="Background" Value="Transparent"/>
-                                         <Setter Property="BorderThickness" Value="0"/>
-                                         <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
-                                         <Setter Property="CaretBrush" Value="{StaticResource TextMain}"/>
-                                    </Style>
-                                </ComboBox.Resources>
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
-                                            <TextBlock Text=", "/>
-                                            <TextBlock Text="{Binding Country}" Foreground="{StaticResource TextDim}"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                                <ComboBox.InputBindings>
-                                    <KeyBinding Key="Enter" Command="{Binding SearchCityCommand}"/>
-                                </ComboBox.InputBindings>
-                             </ComboBox>
                         </Grid>
                     </Border>
                 </Grid>
@@ -403,14 +426,21 @@
                 </Grid>
 
                 <!-- Logs -->
-                <StackPanel Grid.Row="2" Margin="0,24,0,0">
-                    <TextBlock Text="АРХИВ ЛОГОВ СТАНЦИИ" Style="{StaticResource LabelText}" FontSize="14" Margin="0,0,0,16"/>
-                    <Border Background="{StaticResource TileBg}" BorderBrush="{StaticResource TileBorder}" BorderThickness="1" CornerRadius="12" Padding="0">
+                <Grid Grid.Row="2" Margin="0,24,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="АРХИВ ЛОГОВ СТАНЦИИ" Style="{StaticResource LabelText}" FontSize="14" Margin="0,0,0,16"/>
+
+                    <Border Grid.Row="1" Background="{StaticResource TileBg}" BorderBrush="{StaticResource TileBorder}" BorderThickness="1" CornerRadius="12" Padding="0">
                         <DataGrid ItemsSource="{Binding Logs}" AutoGenerateColumns="False"
                                   Background="Transparent" BorderThickness="0" HeadersVisibility="Column"
                                   GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{StaticResource TileBorder}"
                                   RowBackground="Transparent" Foreground="{StaticResource TextMain}"
-                                  CanUserAddRows="False" IsReadOnly="True">
+                                  CanUserAddRows="False" IsReadOnly="True"
+                                  VerticalScrollBarVisibility="Auto">
                             <DataGrid.Resources>
                                 <Style TargetType="DataGridColumnHeader">
                                     <Setter Property="Background" Value="Transparent"/>
@@ -441,7 +471,7 @@
                                 </Style>
                             </DataGrid.Resources>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="ВРЕМЯ" Binding="{Binding Timestamp, StringFormat=HH:mm:ss}" Width="*"/>
+                                <DataGridTextColumn Header="ВРЕМЯ" Binding="{Binding Timestamp, StringFormat=dd.MM HH:mm:ss}" Width="*"/>
                                 <DataGridTextColumn Header="ID" Binding="{Binding SensorId}" Width="*">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
@@ -461,7 +491,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>
-                </StackPanel>
+                </Grid>
             </Grid>
 
             <!-- Overview View (Favorites) -->
