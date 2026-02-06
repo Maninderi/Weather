@@ -118,7 +118,7 @@ namespace WeatherAppWpf.ViewModels
             }
         }
 
-        partial void OnSelectedSuggestionChanged(GeocodingResult? value)
+        async partial void OnSelectedSuggestionChanged(GeocodingResult? value)
         {
             if (value != null)
             {
@@ -128,11 +128,11 @@ namespace WeatherAppWpf.ViewModels
                 _currentCountryRaw = value.Country ?? "";
                 CityName = value.Country != null ? $"{value.Name}, {value.Country}" : value.Name;
 
-                // Don't clear search text immediately, maybe?
-                // Actually, let's clear suggestions to close the popup.
+                // Clear suggestions to close the popup.
                 Suggestions.Clear();
 
-                LoadDataCommand.Execute(null);
+                // Force update
+                await LoadDataAsync();
             }
         }
 
@@ -349,7 +349,7 @@ namespace WeatherAppWpf.ViewModels
         {
             return code switch
             {
-                0 => "Ясно / Солнечно",
+                0 => "Ясно",
                 1 => "Преимущественно ясно",
                 2 => "Переменная облачность",
                 3 => "Пасмурно",
@@ -361,6 +361,8 @@ namespace WeatherAppWpf.ViewModels
                 61 => "Слабый дождь",
                 63 => "Умеренный дождь",
                 65 => "Сильный дождь",
+                66 => "Ледяной дождь",
+                67 => "Сильный ледяной дождь",
                 71 => "Слабый снег",
                 73 => "Умеренный снег",
                 75 => "Сильный снег",
@@ -368,6 +370,8 @@ namespace WeatherAppWpf.ViewModels
                 80 => "Ливень (слабый)",
                 81 => "Ливень (умеренный)",
                 82 => "Ливень (сильный)",
+                85 => "Снежный ливень (слабый)",
+                86 => "Снежный ливень (сильный)",
                 95 => "Гроза",
                 96 => "Гроза с градом",
                 99 => "Сильная гроза с градом",

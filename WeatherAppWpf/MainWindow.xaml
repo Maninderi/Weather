@@ -235,6 +235,7 @@
                                          <Setter Property="BorderThickness" Value="0"/>
                                          <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
                                          <Setter Property="CaretBrush" Value="{StaticResource TextMain}"/>
+                                         <Setter Property="SelectionBrush" Value="{StaticResource AccentBlue}"/>
                                     </Style>
                                     <Style TargetType="ComboBoxItem">
                                         <Setter Property="Background" Value="{StaticResource TileBg}"/>
@@ -434,6 +435,22 @@
 
                     <TextBlock Grid.Row="0" Text="АРХИВ ЛОГОВ СТАНЦИИ" Style="{StaticResource LabelText}" FontSize="14" Margin="0,0,0,16"/>
 
+                    <TextBlock Grid.Row="1" Text="Данные скоро появятся..."
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Foreground="{StaticResource TextDim}" FontSize="14"
+                               Panel.ZIndex="1">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Logs.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
                     <Border Grid.Row="1" Background="{StaticResource TileBg}" BorderBrush="{StaticResource TileBorder}" BorderThickness="1" CornerRadius="12" Padding="0">
                         <DataGrid ItemsSource="{Binding Logs}" AutoGenerateColumns="False"
                                   Background="Transparent" BorderThickness="0" HeadersVisibility="Column"
@@ -562,7 +579,7 @@
             </Grid>
 
             <!-- Settings View (S) -->
-            <Grid Visibility="{Binding IsSettingsVisible, Converter={StaticResource BoolToVis}}">
+            <Grid Visibility="{Binding IsSettingsVisible, Converter={StaticResource BoolToVis}}" Panel.ZIndex="100">
                 <StackPanel Margin="20">
                      <TextBlock Text="НАСТРОЙКИ" Style="{StaticResource LabelText}" FontSize="24" Margin="0,0,0,24"/>
                      <Border Style="{StaticResource TileStyle}" VerticalAlignment="Top" HorizontalAlignment="Left" Width="400">
@@ -573,12 +590,21 @@
                                      Content="Очистить логи"
                                      Width="140" Height="32"
                                      HorizontalAlignment="Left" Margin="0,20,0,0"
-                                     Background="{StaticResource AccentBlue}" BorderThickness="0" Foreground="White">
+                                     Background="{StaticResource AccentBlue}" BorderThickness="0" Foreground="White"
+                                     Cursor="Hand">
                                  <Button.Template>
                                     <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="6" x:Name="border">
                                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="border" Property="Background" Value="#2563eb"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                  </Button.Template>
                              </Button>
