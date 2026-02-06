@@ -31,5 +31,47 @@ namespace WeatherAppWpf.Services
                 .Take(count)
                 .ToListAsync();
         }
+
+        public async Task ClearLogsAsync()
+        {
+            // Truncate logs
+            var logs = _context.WeatherLogs.ToList();
+            _context.WeatherLogs.RemoveRange(logs);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<FavoriteCity>> GetFavoritesAsync()
+        {
+            return await _context.Favorites.ToListAsync();
+        }
+
+        public async Task AddFavoriteAsync(FavoriteCity city)
+        {
+            var exists = await _context.Favorites
+                .AnyAsync(f => f.Name == city.Name && f.Country == city.Country);
+
+            if (!exists)
+            {
+                await _context.Favorites.AddAsync(city);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task RemoveFavoriteAsync(FavoriteCity city)
+        {
+            if (_context.Entry(city).State == EntityState.Detached)
+            {
+                var existing = await _context.Favorites.FindAsync(city.Id);
+                if (existing != null)
+                {
+                    _context.Favorites.Remove(existing);
+                }
+            }
+            else
+            {
+                _context.Favorites.Remove(city);
+            }
+            await _context.SaveChangesAsync();
+        }
     }
 }
