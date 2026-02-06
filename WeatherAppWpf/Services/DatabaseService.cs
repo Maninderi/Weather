@@ -16,6 +16,22 @@ namespace WeatherAppWpf.Services
         {
             _context = new WeatherContext();
             _context.Database.EnsureCreated();
+
+            try
+            {
+                _context.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS ""Favorites"" (
+                        ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_Favorites"" PRIMARY KEY AUTOINCREMENT,
+                        ""Name"" TEXT NOT NULL,
+                        ""Country"" TEXT NOT NULL,
+                        ""Latitude"" REAL NOT NULL,
+                        ""Longitude"" REAL NOT NULL
+                    );");
+            }
+            catch
+            {
+                // Ignore if table creation fails (e.g. already exists or permissions)
+            }
         }
 
         public async Task AddLogsAsync(IEnumerable<WeatherLog> logs)
