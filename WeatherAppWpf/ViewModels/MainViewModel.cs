@@ -282,6 +282,8 @@ namespace WeatherAppWpf.ViewModels
         [RelayCommand]
         private async Task AddFavoriteAsync()
         {
+            if (string.IsNullOrWhiteSpace(_currentCityNameRaw)) return;
+
             var city = new FavoriteCity
             {
                 Name = _currentCityNameRaw,
@@ -328,7 +330,19 @@ namespace WeatherAppWpf.ViewModels
         private async Task ClearLogsAsync()
         {
             await _databaseService.ClearLogsAsync();
-            Logs.Clear();
+
+            // Force UI update
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                Logs.Clear();
+            });
+
+            // Double check by reloading (should be empty)
+            var remaining = await _databaseService.GetRecentLogsAsync();
+            if (remaining.Count == 0 && Logs.Count > 0)
+            {
+                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => Logs.Clear());
+            }
         }
 
         private string GetWeatherDescription(int code)
