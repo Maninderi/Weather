@@ -11,7 +11,14 @@
         Foreground="#f8fafc"
         FontFamily="Segoe UI">
 
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
     <Window.Resources>
+        <!-- Converters -->
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
         <!-- Colors -->
         <SolidColorBrush x:Key="BgDeep" Color="#0a0c10"/>
         <SolidColorBrush x:Key="TileBg" Color="#161a22"/>
@@ -47,7 +54,6 @@
              <Setter Property="Foreground" Value="{StaticResource TextDim}"/>
              <Setter Property="FontSize" Value="12"/>
              <Setter Property="FontWeight" Value="SemiBold"/>
-             <!-- TextTransform Uppercase is not direct property in WPF TextBlock, handled in text or converter -->
         </Style>
 
         <Style x:Key="NavButton" TargetType="Button">
@@ -59,18 +65,18 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="12">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentBlue}"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
-                    <Setter Property="Cursor" Value="Hand"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
 
     </Window.Resources>
@@ -84,289 +90,345 @@
         <!-- Sidebar -->
         <Border Grid.Column="0" Background="{StaticResource TileBg}" BorderBrush="{StaticResource TileBorder}" BorderThickness="0,0,1,0">
             <StackPanel HorizontalAlignment="Center" Margin="0,32,0,0">
-                <Button Style="{StaticResource NavButton}" Background="{StaticResource AccentBlue}" Command="{Binding LoadDataCommand}">
-                   <TextBlock Text="W" FontWeight="Bold" Foreground="White"/>
+                <Button Command="{Binding NavigateCommand}" CommandParameter="W">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsWeatherVisible}" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                   <TextBlock Text="W" FontWeight="Bold">
+                       <TextBlock.Style>
+                           <Style TargetType="TextBlock">
+                               <Setter Property="Foreground" Value="{StaticResource TextDim}"/>
+                               <Style.Triggers>
+                                   <DataTrigger Binding="{Binding IsWeatherVisible}" Value="True">
+                                       <Setter Property="Foreground" Value="White"/>
+                                   </DataTrigger>
+                               </Style.Triggers>
+                           </Style>
+                       </TextBlock.Style>
+                   </TextBlock>
                 </Button>
-                 <Button Style="{StaticResource NavButton}">
-                   <TextBlock Text="O" Foreground="{StaticResource TextDim}"/>
+                 <Button Command="{Binding NavigateCommand}" CommandParameter="O">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsOverviewVisible}" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                   <TextBlock Text="O">
+                       <TextBlock.Style>
+                           <Style TargetType="TextBlock">
+                               <Setter Property="Foreground" Value="{StaticResource TextDim}"/>
+                               <Style.Triggers>
+                                   <DataTrigger Binding="{Binding IsOverviewVisible}" Value="True">
+                                       <Setter Property="Foreground" Value="White"/>
+                                   </DataTrigger>
+                               </Style.Triggers>
+                           </Style>
+                       </TextBlock.Style>
+                   </TextBlock>
                 </Button>
-                 <Button Style="{StaticResource NavButton}">
-                   <TextBlock Text="S" Foreground="{StaticResource TextDim}"/>
+                 <Button Command="{Binding NavigateCommand}" CommandParameter="S">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSettingsVisible}" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                   <TextBlock Text="S">
+                       <TextBlock.Style>
+                           <Style TargetType="TextBlock">
+                               <Setter Property="Foreground" Value="{StaticResource TextDim}"/>
+                               <Style.Triggers>
+                                   <DataTrigger Binding="{Binding IsSettingsVisible}" Value="True">
+                                       <Setter Property="Foreground" Value="White"/>
+                                   </DataTrigger>
+                               </Style.Triggers>
+                           </Style>
+                       </TextBlock.Style>
+                   </TextBlock>
                 </Button>
             </StackPanel>
         </Border>
 
-        <!-- Main Content -->
+        <!-- Main Content Area -->
         <Grid Grid.Column="1" Margin="32">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/> <!-- Header -->
-                <RowDefinition Height="Auto"/> <!-- Tectonic Grid -->
-                <RowDefinition Height="*"/>    <!-- Logs -->
-            </Grid.RowDefinitions>
 
-            <!-- Header -->
-            <Grid Grid.Row="0" Margin="0,0,0,40">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="Current Location // 55.7558° N, 37.6173° E" Style="{StaticResource MonoText}" Foreground="{StaticResource TextDim}" FontSize="13"/>
-                    <TextBlock Text="Москва, Россия" FontSize="40" FontWeight="ExtraBold" Margin="0,8,0,0"/>
-                    <TextBlock Text="{Binding ErrorMessage}" Foreground="#ef4444" FontSize="14" Margin="0,4,0,0" TextWrapping="Wrap"/>
-                </StackPanel>
-
-                <Border Grid.Column="1" Background="{StaticResource TileBg}" BorderBrush="{StaticResource TileBorder}" BorderThickness="1" CornerRadius="12" Padding="12,8" Width="300" VerticalAlignment="Bottom">
-                    <TextBox Text="Поиск города..." Background="Transparent" BorderThickness="0" Foreground="{StaticResource TextDim}"/>
-                </Border>
-            </Grid>
-
-            <!-- Tectonic Grid -->
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+            <!-- Weather View -->
+            <Grid Visibility="{Binding IsWeatherVisible, Converter={StaticResource BoolToVis}}">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="220"/>
-                    <RowDefinition Height="220"/>
+                    <RowDefinition Height="Auto"/> <!-- Header -->
+                    <RowDefinition Height="Auto"/> <!-- Tectonic Grid -->
+                    <RowDefinition Height="*"/>    <!-- Logs -->
                 </Grid.RowDefinitions>
 
-                <!-- Hero Tile (Span 2x2) -->
-                <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Grid.ColumnSpan="2" Style="{StaticResource TileStyle}" Margin="0,0,24,24">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#1e293b" Offset="0"/>
-                            <GradientStop Color="#0f172a" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                <!-- Header -->
+                <Grid Grid.Row="0" Margin="0,0,0,40">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                        <StackPanel>
-                            <Border Background="#1A3B82F6" BorderBrush="{StaticResource AccentBlue}" BorderThickness="1" CornerRadius="100" Padding="16,8" HorizontalAlignment="Left">
-                                <TextBlock Text="Ясно / Солнечно" Foreground="{StaticResource AccentBlue}" FontSize="12" FontWeight="SemiBold"/>
-                            </Border>
-                            <TextBlock Text="{Binding Temperature}" FontSize="110" FontWeight="Bold" Margin="0,10,0,0">
-                                <TextBlock.Foreground>
-                                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                        <GradientStop Color="White" Offset="0"/>
-                                        <GradientStop Color="#64748b" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </TextBlock.Foreground>
-                            </TextBlock>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Ощущается как " Foreground="{StaticResource TextDim}" FontSize="18"/>
-                                <TextBlock Text="{Binding FeelsLike}" Foreground="White" Style="{StaticResource MonoText}" FontSize="18"/>
-                            </StackPanel>
-                        </StackPanel>
-
-                        <!-- Forecast Placeholder -->
-                        <Grid Grid.Row="1" Margin="0,20,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                             <!-- Days would go here, simplified for WPF example -->
-                            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                                <TextBlock Text="ПН" Style="{StaticResource MonoText}" Foreground="{StaticResource TextDim}" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Text="24°" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
-                             <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                                <TextBlock Text="ВТ" Style="{StaticResource MonoText}" Foreground="{StaticResource TextDim}" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Text="22°" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
-                             <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                                <TextBlock Text="СР" Style="{StaticResource MonoText}" Foreground="{StaticResource TextDim}" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Text="19°" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
-                             <StackPanel Grid.Column="3" HorizontalAlignment="Center">
-                                <TextBlock Text="ЧТ" Style="{StaticResource MonoText}" Foreground="{StaticResource TextDim}" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Text="21°" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
-                             <StackPanel Grid.Column="4" HorizontalAlignment="Center">
-                                <TextBlock Text="ПТ" Style="{StaticResource MonoText}" Foreground="{StaticResource TextDim}" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Text="25°" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
-                             <StackPanel Grid.Column="5" HorizontalAlignment="Center">
-                                <TextBlock Text="СБ" Style="{StaticResource MonoText}" Foreground="{StaticResource TextDim}" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Text="27°" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
-                        </Grid>
-                    </Grid>
-                </Border>
-
-                <!-- Wind Speed -->
-                <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource TileStyle}" Margin="0,0,24,24">
-                    <StackPanel>
-                        <TextBlock Text="СКОРОСТЬ ВЕТРА" Style="{StaticResource LabelText}"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <TextBlock Text="{Binding WindSpeed}" FontSize="32" FontWeight="Bold" Style="{StaticResource MonoText}"/>
-                            <TextBlock Text="км/ч" Foreground="{StaticResource TextDim}" VerticalAlignment="Bottom" Margin="4,0,0,6"/>
-                        </StackPanel>
-                        <!-- Chart Mock -->
-                        <StackPanel Orientation="Horizontal" Height="60" VerticalAlignment="Bottom" Margin="0,20,0,0" Opacity="0.5">
-                            <Rectangle Width="10" Height="20" Fill="{StaticResource AccentBlue}" VerticalAlignment="Bottom" Margin="2"/>
-                            <Rectangle Width="10" Height="40" Fill="{StaticResource AccentBlue}" VerticalAlignment="Bottom" Margin="2"/>
-                            <Rectangle Width="10" Height="30" Fill="{StaticResource AccentBlue}" VerticalAlignment="Bottom" Margin="2"/>
-                            <Rectangle Width="10" Height="50" Fill="{StaticResource AccentBlue}" VerticalAlignment="Bottom" Margin="2"/>
-                             <Rectangle Width="10" Height="45" Fill="{StaticResource AccentBlue}" VerticalAlignment="Bottom" Margin="2"/>
-                        </StackPanel>
-                        <TextBlock Margin="0,12,0,0" FontSize="12" Foreground="{StaticResource TextDim}">
-                            Направление: <Run Text="{Binding WindDirection}" Foreground="White"/>
-                        </TextBlock>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Current Location" Style="{StaticResource MonoText}" Foreground="{StaticResource TextDim}" FontSize="13"/>
+                        <TextBlock Text="{Binding CityName}" FontSize="40" FontWeight="ExtraBold" Margin="0,8,0,0"/>
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="#ef4444" FontSize="14" Margin="0,4,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
-                </Border>
 
-                <!-- UV Index -->
-                <Border Grid.Row="0" Grid.Column="3" Style="{StaticResource TileStyle}" Margin="0,0,0,24">
-                    <StackPanel>
-                        <TextBlock Text="УФ-ИНДЕКС" Style="{StaticResource LabelText}"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <TextBlock Text="{Binding UVIndex}" FontSize="32" FontWeight="Bold" Style="{StaticResource MonoText}"/>
-                            <TextBlock Text="Средний" Foreground="{StaticResource TextDim}" VerticalAlignment="Bottom" Margin="4,0,0,6"/>
+                    <Border Grid.Column="1" Background="{StaticResource TileBg}" BorderBrush="{StaticResource TileBorder}" BorderThickness="1" CornerRadius="12" Padding="12,8" Width="300" VerticalAlignment="Bottom">
+                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="{StaticResource TextDim}" FontSize="14" VerticalContentAlignment="Center">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding SearchCityCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+                    </Border>
+                </Grid>
+
+                <!-- Tectonic Grid -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="220"/>
+                        <RowDefinition Height="220"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Hero Tile (Span 2x2) -->
+                    <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Grid.ColumnSpan="2" Style="{StaticResource TileStyle}" Margin="0,0,24,24">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#1e293b" Offset="0"/>
+                                <GradientStop Color="#0f172a" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel>
+                                <Border Background="#1A3B82F6" BorderBrush="{StaticResource AccentBlue}" BorderThickness="1" CornerRadius="100" Padding="16,8" HorizontalAlignment="Left">
+                                    <TextBlock Text="{Binding WeatherDescription}" Foreground="{StaticResource AccentBlue}" FontSize="12" FontWeight="SemiBold"/>
+                                </Border>
+                                <TextBlock Text="{Binding Temperature}" FontSize="110" FontWeight="Bold" Margin="0,10,0,0">
+                                    <TextBlock.Foreground>
+                                        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                            <GradientStop Color="White" Offset="0"/>
+                                            <GradientStop Color="#64748b" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </TextBlock.Foreground>
+                                </TextBlock>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Ощущается как " Foreground="{StaticResource TextDim}" FontSize="18"/>
+                                    <TextBlock Text="{Binding FeelsLike}" Foreground="White" Style="{StaticResource MonoText}" FontSize="18"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Forecast List -->
+                            <Grid Grid.Row="1" Margin="0,20,0,0">
+                                <ItemsControl ItemsSource="{Binding Forecasts}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="1"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel HorizontalAlignment="Center">
+                                                <TextBlock Text="{Binding DayName}" Style="{StaticResource MonoText}" Foreground="{StaticResource TextDim}" FontSize="11" HorizontalAlignment="Center"/>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                                    <TextBlock Text="{Binding MaxTemp, StringFormat={}{0:F0}°}" FontWeight="Bold"/>
+                                                    <TextBlock Text="/" Foreground="{StaticResource TextDim}" Margin="2,0"/>
+                                                    <TextBlock Text="{Binding MinTemp, StringFormat={}{0:F0}°}" Foreground="{StaticResource TextDim}"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Wind Speed -->
+                    <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource TileStyle}" Margin="0,0,24,24">
+                        <StackPanel>
+                            <TextBlock Text="СКОРОСТЬ ВЕТРА" Style="{StaticResource LabelText}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="{Binding WindSpeed}" FontSize="32" FontWeight="Bold" Style="{StaticResource MonoText}"/>
+                                <TextBlock Text="км/ч" Foreground="{StaticResource TextDim}" VerticalAlignment="Bottom" Margin="4,0,0,6"/>
+                            </StackPanel>
+                            <!-- Chart Mock -->
+                            <StackPanel Orientation="Horizontal" Height="60" VerticalAlignment="Bottom" Margin="0,20,0,0" Opacity="0.5">
+                                <Rectangle Width="10" Height="20" Fill="{StaticResource AccentBlue}" VerticalAlignment="Bottom" Margin="2"/>
+                                <Rectangle Width="10" Height="40" Fill="{StaticResource AccentBlue}" VerticalAlignment="Bottom" Margin="2"/>
+                                <Rectangle Width="10" Height="30" Fill="{StaticResource AccentBlue}" VerticalAlignment="Bottom" Margin="2"/>
+                                <Rectangle Width="10" Height="50" Fill="{StaticResource AccentBlue}" VerticalAlignment="Bottom" Margin="2"/>
+                                <Rectangle Width="10" Height="45" Fill="{StaticResource AccentBlue}" VerticalAlignment="Bottom" Margin="2"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <TextBlock Text="➤" FontSize="14" Foreground="White" RenderTransformOrigin="0.5,0.5" Margin="0,0,8,0">
+                                    <TextBlock.RenderTransform>
+                                        <RotateTransform Angle="{Binding WindDirection}"/>
+                                    </TextBlock.RenderTransform>
+                                </TextBlock>
+                                <TextBlock FontSize="12" Foreground="{StaticResource TextDim}">
+                                    Направление: <Run Text="{Binding WindDirection}" Foreground="White"/>°
+                                </TextBlock>
+                            </StackPanel>
                         </StackPanel>
-                        <ProgressBar Height="6" Value="40" Maximum="100" BorderThickness="0" Background="#1e293b" Foreground="{StaticResource AccentCyan}" Margin="0,16,0,0">
-                             <ProgressBar.Resources>
-                                <Style TargetType="ProgressBar">
+                    </Border>
+
+                    <!-- UV Index -->
+                    <Border Grid.Row="0" Grid.Column="3" Style="{StaticResource TileStyle}" Margin="0,0,0,24">
+                        <StackPanel>
+                            <TextBlock Text="УФ-ИНДЕКС" Style="{StaticResource LabelText}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="{Binding UVIndex}" FontSize="32" FontWeight="Bold" Style="{StaticResource MonoText}"/>
+                                <TextBlock Text="Средний" Foreground="{StaticResource TextDim}" VerticalAlignment="Bottom" Margin="4,0,0,6"/>
+                            </StackPanel>
+                            <ProgressBar Height="6" Value="40" Maximum="100" BorderThickness="0" Background="#1e293b" Foreground="{StaticResource AccentCyan}" Margin="0,16,0,0"/>
+                            <TextBlock Text="Используйте защиту до 16:00" Margin="0,12,0,0" FontSize="12" Foreground="{StaticResource TextDim}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Humidity -->
+                    <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource TileStyle}" Margin="0,0,24,24">
+                        <StackPanel>
+                            <TextBlock Text="ВЛАЖНОСТЬ" Style="{StaticResource LabelText}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="{Binding Humidity}" FontSize="32" FontWeight="Bold" Style="{StaticResource MonoText}"/>
+                                <TextBlock Text="%" Foreground="{StaticResource TextDim}" VerticalAlignment="Bottom" Margin="4,0,0,6"/>
+                            </StackPanel>
+                            <DockPanel Margin="0,24,0,0">
+                                <TextBlock Text="0%" DockPanel.Dock="Left" Style="{StaticResource MonoText}" FontSize="12" Foreground="{StaticResource TextMain}"/>
+                                <TextBlock Text="100%" DockPanel.Dock="Right" Style="{StaticResource MonoText}" FontSize="12" Foreground="{StaticResource TextMain}"/>
+                                <ProgressBar Height="6" Value="{Binding Humidity}" Maximum="100" BorderThickness="0" Background="#1e293b" Foreground="{StaticResource AccentBlue}" Margin="8,0"/>
+                            </DockPanel>
+                            <TextBlock Text="Точка росы сейчас 12°" Margin="0,12,0,0" FontSize="12" Foreground="{StaticResource TextDim}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Pressure -->
+                    <Border Grid.Row="1" Grid.Column="3" Style="{StaticResource TileStyle}" Margin="0,0,0,24">
+                        <StackPanel>
+                            <TextBlock Text="ДАВЛЕНИЕ" Style="{StaticResource LabelText}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="{Binding Pressure}" FontSize="32" FontWeight="Bold" Style="{StaticResource MonoText}"/>
+                                <TextBlock Text="hPa" Foreground="{StaticResource TextDim}" VerticalAlignment="Bottom" Margin="4,0,0,6"/>
+                            </StackPanel>
+                            <TextBlock Text="↑ Растет постепенно" Margin="0,16,0,0" FontSize="12" Foreground="{StaticResource AccentCyan}" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Logs -->
+                <StackPanel Grid.Row="2" Margin="0,24,0,0">
+                    <TextBlock Text="АРХИВ ЛОГОВ СТАНЦИИ" Style="{StaticResource LabelText}" FontSize="14" Margin="0,0,0,16"/>
+                    <Border Background="{StaticResource TileBg}" BorderBrush="{StaticResource TileBorder}" BorderThickness="1" CornerRadius="12" Padding="0">
+                        <DataGrid ItemsSource="{Binding Logs}" AutoGenerateColumns="False"
+                                  Background="Transparent" BorderThickness="0" HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{StaticResource TileBorder}"
+                                  RowBackground="Transparent" Foreground="{StaticResource TextMain}"
+                                  CanUserAddRows="False" IsReadOnly="True">
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextDim}"/>
+                                    <Setter Property="Padding" Value="16"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource TileBorder}"/>
+                                </Style>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="Padding" Value="16"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
                                     <Setter Property="Template">
                                         <Setter.Value>
-                                            <ControlTemplate TargetType="ProgressBar">
-                                                <Grid x:Name="TemplateRoot">
-                                                    <VisualStateManager.VisualStateGroups>
-                                                        <VisualStateGroup x:Name="CommonStates">
-                                                            <VisualState x:Name="Determinate"/>
-                                                            <VisualState x:Name="Indeterminate"/>
-                                                        </VisualStateGroup>
-                                                    </VisualStateManager.VisualStateGroups>
-                                                    <Border Background="{TemplateBinding Background}" CornerRadius="3"/>
-                                                    <Border x:Name="PART_Indicator" CornerRadius="3" Background="{TemplateBinding Foreground}" HorizontalAlignment="Left"/>
-                                                </Grid>
+                                            <ControlTemplate TargetType="DataGridCell">
+                                                <Border Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                                                    <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                                </Border>
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
                                 </Style>
-                            </ProgressBar.Resources>
-                        </ProgressBar>
-                        <TextBlock Text="Используйте защиту до 16:00" Margin="0,12,0,0" FontSize="12" Foreground="{StaticResource TextDim}"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Humidity -->
-                <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource TileStyle}" Margin="0,0,24,24">
-                    <StackPanel>
-                        <TextBlock Text="ВЛАЖНОСТЬ" Style="{StaticResource LabelText}"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <TextBlock Text="{Binding Humidity}" FontSize="32" FontWeight="Bold" Style="{StaticResource MonoText}"/>
-                            <TextBlock Text="%" Foreground="{StaticResource TextDim}" VerticalAlignment="Bottom" Margin="4,0,0,6"/>
-                        </StackPanel>
-                        <DockPanel Margin="0,24,0,0">
-                            <TextBlock Text="0%" DockPanel.Dock="Left" Style="{StaticResource MonoText}" FontSize="12" Foreground="{StaticResource TextMain}"/>
-                            <TextBlock Text="100%" DockPanel.Dock="Right" Style="{StaticResource MonoText}" FontSize="12" Foreground="{StaticResource TextMain}"/>
-                            <ProgressBar Height="6" Value="{Binding Humidity}" Maximum="100" BorderThickness="0" Background="#1e293b" Foreground="{StaticResource AccentBlue}" Margin="8,0">
-                                <ProgressBar.Resources>
-                                     <Style TargetType="ProgressBar">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="ProgressBar">
-                                                    <Grid x:Name="TemplateRoot">
-                                                        <Border Background="{TemplateBinding Background}" CornerRadius="3"/>
-                                                        <Border x:Name="PART_Indicator" CornerRadius="3" Background="{TemplateBinding Foreground}" HorizontalAlignment="Left"/>
-                                                    </Grid>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </ProgressBar.Resources>
-                            </ProgressBar>
-                        </DockPanel>
-                        <TextBlock Text="Точка росы сейчас 12°" Margin="0,12,0,0" FontSize="12" Foreground="{StaticResource TextDim}"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Pressure -->
-                <Border Grid.Row="1" Grid.Column="3" Style="{StaticResource TileStyle}" Margin="0,0,0,24">
-                     <StackPanel>
-                        <TextBlock Text="ДАВЛЕНИЕ" Style="{StaticResource LabelText}"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <TextBlock Text="{Binding Pressure}" FontSize="32" FontWeight="Bold" Style="{StaticResource MonoText}"/>
-                            <TextBlock Text="hPa" Foreground="{StaticResource TextDim}" VerticalAlignment="Bottom" Margin="4,0,0,6"/>
-                        </StackPanel>
-                        <TextBlock Text="↑ Растет постепенно" Margin="0,16,0,0" FontSize="12" Foreground="{StaticResource AccentCyan}" FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Border>
+                                <Style TargetType="DataGridRow">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource TileBorder}"/>
+                                </Style>
+                            </DataGrid.Resources>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="TIMESTAMP" Binding="{Binding Timestamp, StringFormat=HH:mm:ss}" Width="*"/>
+                                <DataGridTextColumn Header="ID" Binding="{Binding SensorId}" Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource AccentBlue}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="PARAMETER" Binding="{Binding Parameter}" Width="*"/>
+                                <DataGridTextColumn Header="VALUE" Binding="{Binding Value}" Width="*"/>
+                                <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="*">
+                                     <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#4ade80"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                </StackPanel>
             </Grid>
 
-            <!-- Logs -->
-            <StackPanel Grid.Row="2" Margin="0,24,0,0">
-                <TextBlock Text="АРХИВ ЛОГОВ СТАНЦИИ #MSK-04" Style="{StaticResource LabelText}" FontSize="14" Margin="0,0,0,16"/>
-                <Border Background="{StaticResource TileBg}" BorderBrush="{StaticResource TileBorder}" BorderThickness="1" CornerRadius="12" Padding="0">
-                    <DataGrid ItemsSource="{Binding Logs}" AutoGenerateColumns="False"
-                              Background="Transparent" BorderThickness="0" HeadersVisibility="Column"
-                              GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{StaticResource TileBorder}"
-                              RowBackground="Transparent" Foreground="{StaticResource TextMain}"
-                              CanUserAddRows="False" IsReadOnly="True">
-                        <DataGrid.Resources>
-                            <Style TargetType="DataGridColumnHeader">
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="Foreground" Value="{StaticResource TextDim}"/>
-                                <Setter Property="Padding" Value="16"/>
-                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                                <Setter Property="BorderBrush" Value="{StaticResource TileBorder}"/>
-                            </Style>
-                            <Style TargetType="DataGridCell">
-                                <Setter Property="Padding" Value="16"/>
-                                <Setter Property="BorderThickness" Value="0"/>
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="DataGridCell">
-                                            <Border Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
-                                                <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                             <Style TargetType="DataGridRow">
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                                <Setter Property="BorderBrush" Value="{StaticResource TileBorder}"/>
-                            </Style>
-                        </DataGrid.Resources>
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="TIMESTAMP" Binding="{Binding Timestamp, StringFormat=HH:mm:ss}" Width="*"/>
-                            <DataGridTextColumn Header="ID" Binding="{Binding SensorId}" Width="*">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="{StaticResource AccentBlue}"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="PARAMETER" Binding="{Binding Parameter}" Width="*"/>
-                            <DataGridTextColumn Header="VALUE" Binding="{Binding Value}" Width="*"/>
-                            <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="*">
-                                 <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="#4ade80"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Border>
-            </StackPanel>
+            <!-- Overview View (O) -->
+            <Grid Visibility="{Binding IsOverviewVisible, Converter={StaticResource BoolToVis}}">
+                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                     <TextBlock Text="FAVORITES / SAVED CITIES" Style="{StaticResource LabelText}" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                     <TextBlock Text="Feature coming soon..." Foreground="{StaticResource TextDim}" HorizontalAlignment="Center"/>
+                 </StackPanel>
+            </Grid>
+
+            <!-- Settings View (S) -->
+            <Grid Visibility="{Binding IsSettingsVisible, Converter={StaticResource BoolToVis}}">
+                <StackPanel Margin="20">
+                     <TextBlock Text="SETTINGS" Style="{StaticResource LabelText}" FontSize="24" Margin="0,0,0,24"/>
+                     <Border Style="{StaticResource TileStyle}" VerticalAlignment="Top" HorizontalAlignment="Left" Width="400">
+                         <StackPanel>
+                            <TextBlock Text="Weather App v1.0" FontWeight="Bold" FontSize="18"/>
+                            <TextBlock Text="Created with WPF &amp; .NET 8" Foreground="{StaticResource TextDim}" Margin="0,8,0,0"/>
+                             <Button Content="Clear Logs" Width="120" Height="32" HorizontalAlignment="Left" Margin="0,20,0,0" Background="{StaticResource AccentBlue}" BorderThickness="0" Foreground="White">
+                                 <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                 </Button.Template>
+                             </Button>
+                         </StackPanel>
+                     </Border>
+                </StackPanel>
+            </Grid>
+
         </Grid>
     </Grid>
 </Window>
